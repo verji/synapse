@@ -83,6 +83,53 @@ INLINE_CONTENT_TYPES = [
     "audio/x-flac",
 ]
 
+# Default timeout_ms for download and thumbnail requests
+DEFAULT_MAX_TIMEOUT_MS = 20_000
+
+# Maximum allowed timeout_ms for download and thumbnail requests
+MAXIMUM_ALLOWED_MAX_TIMEOUT_MS = 60_000
+
+
+def parse_media_id(request: Request) -> Tuple[str, str, Optional[str]]:
+    """Parses the server name, media ID and optional file name from the request URI
+
+    Also performs some rough validation on the server name.
+
+    Args:
+        request: The `Request`.
+
+    Returns:
+        A tuple containing the parsed server name, media ID and optional file name.
+
+    Raises:
+        SynapseError(404): if parsing or validation fail for any reason
+    """
+    try:
+        # The type on postpath seems incorrect in Twisted 21.2.0.
+        postpath: List[bytes] = request.postpath  # type: ignore
+        assert postpath
+
+        # This allows users to append e.g. /test.png to the URL. Useful for
+        # clients that parse the URL to see content type.
+        server_name_bytes, media_id_bytes = postpath[:2]
+        server_name = server_name_bytes.decode("utf-8")
+        media_id = media_id_bytes.decode("utf8")
+
+        # Validate the server name, raising if invalid
+        parse_and_validate_server_name(server_name)
+
+        file_name = None
+        if len(postpath) > 2:
+            try:
+                file_name = urllib.parse.unquote(postpath[-1].decode("utf-8"))
+            except UnicodeDecodeError:
+                pass
+        return server_name, media_id, file_name
+    except Exception:
+        raise SynapseError(
+            404, "Invalid media id token %r" % (request.postpath,), Codes.UNKNOWN
+        )
+
 
 def respond_404(request: SynapseRequest) -> None:
     assert request.path is not None
