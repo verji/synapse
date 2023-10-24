@@ -17,10 +17,7 @@ import re
 from typing import TYPE_CHECKING, Optional
 
 from synapse.http.server import set_corp_headers, set_cors_headers
-from synapse.http.servlet import RestServlet, parse_boolean
-from synapse.http.site import SynapseRequest
-from synapse.util.stringutils import parse_and_validate_server_name
-from synapse.http.servlet import parse_boolean, parse_integer
+from synapse.http.servlet import RestServlet, parse_boolean, parse_integer
 from synapse.http.site import SynapseRequest
 from synapse.media._base import (
     DEFAULT_MAX_TIMEOUT_MS,
@@ -28,6 +25,7 @@ from synapse.media._base import (
     parse_media_id,
     respond_404,
 )
+from synapse.util.stringutils import parse_and_validate_server_name
 
 if TYPE_CHECKING:
     from synapse.media.media_repository import MediaRepository
