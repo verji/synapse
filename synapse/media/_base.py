@@ -26,11 +26,11 @@ from twisted.internet.interfaces import IConsumer
 from twisted.protocols.basic import FileSender
 from twisted.web.server import Request
 
-from synapse.api.errors import Codes, cs_error
+from synapse.api.errors import Codes, cs_error, SynapseError
 from synapse.http.server import finish_request, respond_with_json
 from synapse.http.site import SynapseRequest
 from synapse.logging.context import make_deferred_yieldable
-from synapse.util.stringutils import is_ascii
+from synapse.util.stringutils import is_ascii, parse_and_validate_server_name
 
 logger = logging.getLogger(__name__)
 
