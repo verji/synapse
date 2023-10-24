@@ -18,7 +18,8 @@ from typing import TYPE_CHECKING
 
 from synapse.api.errors import LimitExceededError
 from synapse.api.ratelimiting import Ratelimiter
-from synapse.http.server import DirectServeJsonResource, respond_with_json
+from synapse.http.server import respond_with_json
+from synapse.http.servlet import RestServlet
 from synapse.http.site import SynapseRequest
 
 if TYPE_CHECKING:
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class CreateResource(DirectServeJsonResource):
+class CreateResource(RestServlet):
     PATTERNS = [re.compile("/_matrix/media/v1/create")]
     isLeaf = True
 
