@@ -22,7 +22,6 @@ from synapse.http.site import SynapseRequest
 from synapse.media._base import (
     DEFAULT_MAX_TIMEOUT_MS,
     MAXIMUM_ALLOWED_MAX_TIMEOUT_MS,
-    parse_media_id,
     respond_404,
 )
 from synapse.util.stringutils import parse_and_validate_server_name
@@ -71,7 +70,6 @@ class DownloadResource(RestServlet):
         # Limited non-standard form of CSP for IE11
         request.setHeader(b"X-Content-Security-Policy", b"sandbox;")
         request.setHeader(b"Referrer-Policy", b"no-referrer")
-        server_name, media_id, name = parse_media_id(request)
         max_timeout_ms = parse_integer(
             request, "timeout_ms", default=DEFAULT_MAX_TIMEOUT_MS
         )
@@ -79,7 +77,7 @@ class DownloadResource(RestServlet):
 
         if self._is_mine_server_name(server_name):
             await self.media_repo.get_local_media(
-                request, media_id, name, max_timeout_ms
+                request, media_id, file_name, max_timeout_ms
             )
         else:
             allow_remote = parse_boolean(request, "allow_remote", default=True)
@@ -93,5 +91,5 @@ class DownloadResource(RestServlet):
                 return
 
             await self.media_repo.get_remote_media(
-                request, server_name, media_id, name, max_timeout_ms
+                request, server_name, media_id, file_name, max_timeout_ms
             )
