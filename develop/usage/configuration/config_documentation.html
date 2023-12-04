@@ -1390,7 +1390,7 @@ see <a href="../../postgres.html">here</a>.</p>
   args:
     user: synapse_user
     password: secretpassword
-    database: synapse
+    dbname: synapse
     host: localhost
     port: 5432
     cp_min: 5
@@ -1472,7 +1472,7 @@ when Synapse is started.</p>
     args:
       user: synapse_user
       password: secretpassword
-      database: synapse_main
+      dbname: synapse_main
       host: localhost
       port: 5432
       cp_min: 5
@@ -1485,7 +1485,7 @@ when Synapse is started.</p>
     args:
       user: synapse_user
       password: secretpassword
-      database: synapse_state
+      dbname: synapse_state
       host: localhost
       port: 5432
       cp_min: 5
@@ -1665,6 +1665,16 @@ sending the invite. Defaults to <code>per_second: 0.2</code>, <code>burst_count:
   burst_count: 10
 </code></pre>
 <hr />
+<h3 id="rc_media_create"><a class="header" href="#rc_media_create"><code>rc_media_create</code></a></h3>
+<p>This option ratelimits creation of MXC URIs via the <code>/_matrix/media/v1/create</code>
+endpoint based on the account that's creating the media. Defaults to
+<code>per_second: 10</code>, <code>burst_count: 50</code>.</p>
+<p>Example configuration:</p>
+<pre><code class="language-yaml">rc_media_create:
+  per_second: 10
+  burst_count: 50
+</code></pre>
+<hr />
 <h3 id="rc_federation"><a class="header" href="#rc_federation"><code>rc_federation</code></a></h3>
 <p>Defines limits on federation requests.</p>
 <p>The <code>rc_federation</code> configuration has the following sub-options:</p>
@@ -1711,6 +1721,21 @@ Set to false if you are using a separate media store worker.</p>
 <p>Directory where uploaded images and attachments are stored.</p>
 <p>Example configuration:</p>
 <pre><code class="language-yaml">media_store_path: &quot;DATADIR/media_store&quot;
+</code></pre>
+<hr />
+<h3 id="max_pending_media_uploads"><a class="header" href="#max_pending_media_uploads"><code>max_pending_media_uploads</code></a></h3>
+<p>How many <em>pending media uploads</em> can a given user have? A pending media upload
+is a created MXC URI that (a) is not expired (the <code>unused_expires_at</code> timestamp
+has not passed) and (b) the media has not yet been uploaded for. Defaults to 5.</p>
+<p>Example configuration:</p>
+<pre><code class="language-yaml">max_pending_media_uploads: 5
+</code></pre>
+<hr />
+<h3 id="unused_expiration_time"><a class="header" href="#unused_expiration_time"><code>unused_expiration_time</code></a></h3>
+<p>How long to wait in milliseconds before expiring created media IDs. Defaults to
+&quot;24h&quot;</p>
+<p>Example configuration:</p>
+<pre><code class="language-yaml">unused_expiration_time: &quot;1h&quot;
 </code></pre>
 <hr />
 <h3 id="media_storage_providers"><a class="header" href="#media_storage_providers"><code>media_storage_providers</code></a></h3>
@@ -3768,9 +3793,11 @@ authorize inter-worker communication.</p>
   - federation_sender1
   - federation_sender2
 </code></pre>
-<h2>Also see the <a href="../../workers.html#restrict-outbound-federation-traffic-to-a-specific-set-of-workers">worker
+<p>Also see the <a href="../../workers.html#restrict-outbound-federation-traffic-to-a-specific-set-of-workers">worker
 documentation</a>
-for more info.</h2>
+for more info.</p>
+<p><em>Added in Synapse 1.89.0.</em></p>
+<hr />
 <h3 id="run_background_tasks_on"><a class="header" href="#run_background_tasks_on"><code>run_background_tasks_on</code></a></h3>
 <p>The <a href="../../workers.html#background-tasks">worker</a> that is used to run
 background tasks (e.g. cleaning up expired data). If not provided this

@@ -715,7 +715,7 @@ section in your config file to match the following lines:</p>
   args:
     user: &lt;user&gt;
     password: &lt;pass&gt;
-    database: &lt;db&gt;
+    dbname: &lt;db&gt;
     host: &lt;host&gt;
     cp_min: 5
     cp_max: 10
@@ -1783,6 +1783,29 @@ dpkg -i matrix-synapse-py3_1.3.0+stretch1_amd64.deb
 </code></pre>
 </li>
 </ul>
+<p>Generally Synapse database schemas are compatible across multiple versions, once
+a version of Synapse is deployed you may not be able to rollback automatically.
+The following table gives the version ranges and the earliest version they can
+be rolled back to. E.g. Synapse versions v1.58.0 through v1.61.1 can be rolled
+back safely to v1.57.0, but starting with v1.62.0 it is only safe to rollback to
+v1.61.0.</p>
+<table><thead><tr><th>Versions</th><th>Compatible version</th></tr></thead><tbody>
+<tr><td>v1.0.0 – v1.2.1</td><td>v1.0.0</td></tr>
+<tr><td>v1.3.0 – v1.8.0</td><td>v1.3.0</td></tr>
+<tr><td>v1.9.0 – v1.12.4</td><td>v1.9.0</td></tr>
+<tr><td>v1.13.0 – v1.25.0</td><td>v1.13.0</td></tr>
+<tr><td>v1.26.0 – v1.44.0</td><td>v1.26.0</td></tr>
+<tr><td>v1.45.0 – v1.47.1</td><td>v1.38.0</td></tr>
+<tr><td>v1.48.0 – v1.51.0</td><td>v1.39.0</td></tr>
+<tr><td>v1.52.0 – v1.57.1</td><td>v1.49.0</td></tr>
+<tr><td>v1.58.0 – v1.61.1</td><td>v1.57.0</td></tr>
+<tr><td>v1.62.0 – v1.63.1</td><td>v1.61.0</td></tr>
+<tr><td>v1.64.0 – v1.69.0</td><td>v1.62.0</td></tr>
+<tr><td>v1.70.0 – v1.82.0</td><td>v1.68.0</td></tr>
+<tr><td>v1.83.0 – v1.84.1</td><td>v1.77.0</td></tr>
+<tr><td>v1.85.0 – v1.91.2</td><td>v1.83.0</td></tr>
+<tr><td>v1.92.0 – v1.95.1</td><td>v1.90.0</td></tr>
+</tbody></table>
 <h1 id="upgrading-to-v1930"><a class="header" href="#upgrading-to-v1930">Upgrading to v1.93.0</a></h1>
 <h2 id="minimum-supported-rust-version"><a class="header" href="#minimum-supported-rust-version">Minimum supported Rust version</a></h2>
 <p>The minimum supported Rust version has been increased from v1.60.0 to v1.61.0.
@@ -4936,7 +4959,7 @@ see <a href="usage/configuration/../../postgres.html">here</a>.</p>
   args:
     user: synapse_user
     password: secretpassword
-    database: synapse
+    dbname: synapse
     host: localhost
     port: 5432
     cp_min: 5
@@ -5018,7 +5041,7 @@ when Synapse is started.</p>
     args:
       user: synapse_user
       password: secretpassword
-      database: synapse_main
+      dbname: synapse_main
       host: localhost
       port: 5432
       cp_min: 5
@@ -5031,7 +5054,7 @@ when Synapse is started.</p>
     args:
       user: synapse_user
       password: secretpassword
-      database: synapse_state
+      dbname: synapse_state
       host: localhost
       port: 5432
       cp_min: 5
@@ -5211,6 +5234,16 @@ sending the invite. Defaults to <code>per_second: 0.2</code>, <code>burst_count:
   burst_count: 10
 </code></pre>
 <hr />
+<h3 id="rc_media_create"><a class="header" href="#rc_media_create"><code>rc_media_create</code></a></h3>
+<p>This option ratelimits creation of MXC URIs via the <code>/_matrix/media/v1/create</code>
+endpoint based on the account that's creating the media. Defaults to
+<code>per_second: 10</code>, <code>burst_count: 50</code>.</p>
+<p>Example configuration:</p>
+<pre><code class="language-yaml">rc_media_create:
+  per_second: 10
+  burst_count: 50
+</code></pre>
+<hr />
 <h3 id="rc_federation"><a class="header" href="#rc_federation"><code>rc_federation</code></a></h3>
 <p>Defines limits on federation requests.</p>
 <p>The <code>rc_federation</code> configuration has the following sub-options:</p>
@@ -5257,6 +5290,21 @@ Set to false if you are using a separate media store worker.</p>
 <p>Directory where uploaded images and attachments are stored.</p>
 <p>Example configuration:</p>
 <pre><code class="language-yaml">media_store_path: &quot;DATADIR/media_store&quot;
+</code></pre>
+<hr />
+<h3 id="max_pending_media_uploads"><a class="header" href="#max_pending_media_uploads"><code>max_pending_media_uploads</code></a></h3>
+<p>How many <em>pending media uploads</em> can a given user have? A pending media upload
+is a created MXC URI that (a) is not expired (the <code>unused_expires_at</code> timestamp
+has not passed) and (b) the media has not yet been uploaded for. Defaults to 5.</p>
+<p>Example configuration:</p>
+<pre><code class="language-yaml">max_pending_media_uploads: 5
+</code></pre>
+<hr />
+<h3 id="unused_expiration_time"><a class="header" href="#unused_expiration_time"><code>unused_expiration_time</code></a></h3>
+<p>How long to wait in milliseconds before expiring created media IDs. Defaults to
+&quot;24h&quot;</p>
+<p>Example configuration:</p>
+<pre><code class="language-yaml">unused_expiration_time: &quot;1h&quot;
 </code></pre>
 <hr />
 <h3 id="media_storage_providers"><a class="header" href="#media_storage_providers"><code>media_storage_providers</code></a></h3>
@@ -7314,9 +7362,11 @@ authorize inter-worker communication.</p>
   - federation_sender1
   - federation_sender2
 </code></pre>
-<h2>Also see the <a href="usage/configuration/../../workers.html#restrict-outbound-federation-traffic-to-a-specific-set-of-workers">worker
+<p>Also see the <a href="usage/configuration/../../workers.html#restrict-outbound-federation-traffic-to-a-specific-set-of-workers">worker
 documentation</a>
-for more info.</h2>
+for more info.</p>
+<p><em>Added in Synapse 1.89.0.</em></p>
+<hr />
 <h3 id="run_background_tasks_on"><a class="header" href="#run_background_tasks_on"><code>run_background_tasks_on</code></a></h3>
 <p>The <a href="usage/configuration/../../workers.html#background-tasks">worker</a> that is used to run
 background tasks (e.g. cleaning up expired data). If not provided this
@@ -10710,6 +10760,13 @@ any of the subsequent implementations of this callback.</p>
 operations to keep track of them. (e.g. add them to a database table). The user is
 represented by their Matrix user ID.</p>
 <p>If multiple modules implement this callback, Synapse runs them all in order.</p>
+<h3 id="on_user_login"><a class="header" href="#on_user_login"><code>on_user_login</code></a></h3>
+<p><em>First introduced in Synapse v1.98.0</em></p>
+<pre><code class="language-python">async def on_user_login(user_id: str, auth_provider_type: str, auth_provider_id: str) -&gt; None
+</code></pre>
+<p>Called after successfully login or registration of a user for cases when module needs to perform extra operations after auth.
+represented by their Matrix user ID.</p>
+<p>If multiple modules implement this callback, Synapse runs them all in order.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="password-auth-provider-callbacks"><a class="header" href="#password-auth-provider-callbacks">Password auth provider callbacks</a></h1>
 <p>Password auth providers offer a way for server administrators to integrate
 their Synapse installation with an external authentication system. The callbacks can be
@@ -13401,7 +13458,8 @@ given timestamp. Defaults to <code>f</code>.</li>
 </ul>
 <p><strong>Response</strong></p>
 <ul>
-<li><code>event_id</code> - converted from timestamp</li>
+<li><code>event_id</code> - The event ID closest to the given timestamp.</li>
+<li><code>origin_server_ts</code> - The timestamp of the event in milliseconds since the Unix epoch.</li>
 </ul>
 <h1 id="block-room-api"><a class="header" href="#block-room-api">Block Room API</a></h1>
 <p>The Block Room admin API allows server admins to block and unblock rooms,
@@ -14581,6 +14639,16 @@ The newest media is on top. You can change the order with parameters
       &quot;quarantined_by&quot;: null,
       &quot;safe_from_quarantine&quot;: false,
       &quot;upload_name&quot;: &quot;test2.png&quot;
+    },
+    {
+      &quot;created_ts&quot;: 300400,
+      &quot;last_access_ts&quot;: 300700,
+      &quot;media_id&quot;: &quot;BzYNLRUgGHphBkdKGbzXwbjX&quot;,
+      &quot;media_length&quot;: 1337,
+      &quot;media_type&quot;: &quot;application/octet-stream&quot;,
+      &quot;quarantined_by&quot;: null,
+      &quot;safe_from_quarantine&quot;: false,
+      &quot;upload_name&quot;: null
     }
   ],
   &quot;next_token&quot;: 3,
@@ -14646,16 +14714,17 @@ database, especially for large environments.</p>
 Media objects contain the following fields:
 <ul>
 <li><code>created_ts</code> - integer - Timestamp when the content was uploaded in ms.</li>
-<li><code>last_access_ts</code> - integer - Timestamp when the content was last accessed in ms.</li>
+<li><code>last_access_ts</code> - integer or null - Timestamp when the content was last accessed in ms.
+Null if there was no access, yet.</li>
 <li><code>media_id</code> - string - The id used to refer to the media. Details about the format
 are documented under
 <a href="admin_api/../media_repository.html">media repository</a>.</li>
 <li><code>media_length</code> - integer - Length of the media in bytes.</li>
 <li><code>media_type</code> - string - The MIME-type of the media.</li>
-<li><code>quarantined_by</code> - string - The user ID that initiated the quarantine request
-for this media.</li>
+<li><code>quarantined_by</code> - string or null - The user ID that initiated the quarantine request
+for this media. Null if not quarantined.</li>
 <li><code>safe_from_quarantine</code> - bool - Status if this media is safe from quarantining.</li>
-<li><code>upload_name</code> - string - The name the media was uploaded with.</li>
+<li><code>upload_name</code> - string or null - The name the media was uploaded with. Null if not provided during upload.</li>
 </ul>
 </li>
 <li><code>next_token</code>: integer - Indication for pagination. See above.</li>
@@ -14716,6 +14785,33 @@ tell they have been logged in as.</p>
 <p>Note: The token will expire if the <em>admin</em> user calls <code>/logout/all</code> from any
 of their devices, but the token will <em>not</em> expire if the target user does the
 same.</p>
+<h2 id="allow-replacing-master-cross-signing-key-without-user-interactive-auth"><a class="header" href="#allow-replacing-master-cross-signing-key-without-user-interactive-auth">Allow replacing master cross-signing key without User-Interactive Auth</a></h2>
+<p>This endpoint is not intended for server administrator usage;
+we describe it here for completeness.</p>
+<p>This API temporarily permits a user to replace their master cross-signing key
+without going through
+<a href="https://spec.matrix.org/v1.8/client-server-api/#user-interactive-authentication-api">user-interactive authentication</a> (UIA).
+This is useful when Synapse has delegated its authentication to the
+<a href="https://github.com/matrix-org/matrix-authentication-service/">Matrix Authentication Service</a>;
+as Synapse cannot perform UIA is not possible in these circumstances.</p>
+<p>The API is</p>
+<pre><code class="language-http request">POST /_synapse/admin/v1/users/&lt;user_id&gt;/_allow_cross_signing_replacement_without_uia
+{}
+</code></pre>
+<p>If the user does not exist, or does exist but has no master cross-signing key,
+this will return with status code <code>404 Not Found</code>.</p>
+<p>Otherwise, a response body like the following is returned, with status <code>200 OK</code>:</p>
+<pre><code class="language-json">{
+    &quot;updatable_without_uia_before_ms&quot;: 1234567890
+}
+</code></pre>
+<p>The response body is a JSON object with a single field:</p>
+<ul>
+<li><code>updatable_without_uia_before_ms</code>: integer. The timestamp in milliseconds
+before which the user is permitted to replace their cross-signing key without
+going through UIA.</li>
+</ul>
+<p><em>Added in Synapse 1.97.0.</em></p>
 <h2 id="user-devices"><a class="header" href="#user-devices">User devices</a></h2>
 <h3 id="list-all-devices"><a class="header" href="#list-all-devices">List all devices</a></h3>
 <p>Gets information about all devices for a specific <code>user_id</code>.</p>
@@ -16328,7 +16424,7 @@ source, you should install <code>poetry</code>.
 Of their installation methods, we recommend
 <a href="https://python-poetry.org/docs/#installing-with-pipx">installing <code>poetry</code> using <code>pipx</code></a>,</p>
 <pre><code class="language-shell">pip install --user pipx
-pipx install poetry==1.5.2  # Problems with Poetry 1.6, see https://github.com/matrix-org/synapse/issues/16147
+pipx install poetry==1.5.1  # Problems with Poetry 1.6, see https://github.com/matrix-org/synapse/issues/16147
 </code></pre>
 <p>but see poetry's <a href="https://python-poetry.org/docs/#installation">installation instructions</a>
 for other installation methods.</p>
