@@ -285,6 +285,14 @@ class SynapseHomeServer(HomeServer):
                 # during parsing
                 logger.warning("Unrecognized listener type: %s", listener.type)
 
+def startDebug():
+
+    import debugpy
+    logger.info("VERJI - Will listen for debugger on port 5678")
+    debugpy.listen(("localhost", 5678))
+    logger.info("VERJI - Waiting for debugger to attach...")
+    debugpy.wait_for_client()  # blocks execution until client is attached
+    logger.info("VERJI - Waiting for debugger to attach...Ready!")
 
 def setup(config_options: List[str]) -> SynapseHomeServer:
     """
@@ -294,10 +302,14 @@ def setup(config_options: List[str]) -> SynapseHomeServer:
     Returns:
         A homeserver instance.
     """
+
+    logger.info("VERJI - Starting debugger...")
+    startDebug()
+
     try:
         config = HomeServerConfig.load_or_generate_config(
             "Synapse Homeserver", config_options
-        )
+        )   
     except ConfigError as e:
         sys.stderr.write("\n")
         for f in format_config_error(e):
@@ -383,15 +395,19 @@ def run(hs: HomeServer) -> None:
 
 
 def main() -> None:
+    logger.info("VERJI: main()  TEST")
     with LoggingContext("main"):
         # check base requirements
+        logger.info("VERJI: check_requirements()")
         check_requirements()
+        logger.info("VERJI: setup()")
         hs = setup(sys.argv[1:])
 
         # redirect stdio to the logs, if configured.
         if not hs.config.logging.no_redirect_stdio:
             redirect_stdio_to_logs()
 
+        logger.info("VERJI: run(hs)")
         run(hs)
 
 

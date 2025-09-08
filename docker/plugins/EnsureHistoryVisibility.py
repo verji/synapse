@@ -1,5 +1,4 @@
 from synapse.module_api import ModuleApi
-from synapse.module_api import ModuleApi
 
 import logging
     
@@ -45,13 +44,13 @@ class EnsureHistoryVisibility:
             # Extract initial_state safely
             initial_state = request_content.get("initial_state", [])
             if not isinstance(initial_state, list):
-                self.logger.warning("initial_state is not a list, aborting EnsureHistoryVisibility.")
+                self.logger.error("initial_state is not a list, aborting EnsureHistoryVisibility...")
                 return
 
             # Find existing history_visibility event, this is safe because we default to False instead of StopInteration
             history_event = next(
                 (ev for ev in initial_state if ev.get("type") == "m.room.history_visibility"),
-                False,
+                False,  # Return False if not found instead of raising StopIteration (explicitly)
             )
 
             if history_event:
