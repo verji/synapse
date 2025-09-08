@@ -185,9 +185,12 @@ COPY --from=builder /install /usr/local
 COPY ./docker/start.py /start.py
 COPY ./docker/conf /conf
 
+RUN pip install debugpy
+COPY ./docker/plugins /usr/local/lib/python3.11/site-packages/synapse/verji
+
 EXPOSE 8008/tcp 8009/tcp 8448/tcp
 
-ENTRYPOINT ["/start.py"]
+ENTRYPOINT ["python", "/start.py"]
 
 HEALTHCHECK --start-period=5s --interval=15s --timeout=5s \
   CMD curl -fSs http://localhost:8008/health || exit 1
