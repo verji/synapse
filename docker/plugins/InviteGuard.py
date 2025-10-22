@@ -14,7 +14,7 @@ class InviteGuard:
 
     def __init__(self, config: dict, api: ModuleApi):
         self.logger = logging.getLogger(__name__)
-        self.logger.info("InviteGuard module loaded")
+        self.logger.info("[VerjiInviteGuard] - VerjiInviteGuard module loaded.")
         self.config = config
         self.api = api
 
@@ -28,19 +28,25 @@ class InviteGuard:
 
         # Register cached functions
         self.api.register_cached_function(self.fakeHasInvitabilityOf)
-        # self.api.register_cached_function(self.fakeHasInvitabilityOf)
 
 
     async def user_may_invite(
         self, inviter_userid, invitee_userid, room_id
     ) -> Union["synapse.module_api.NOT_SPAM", "synapse.module_api.errors.Codes", bool]:
 
+        self.logger.info(
+            "[VerjiInviteGuard] Checking invite: %s inviting %s to room %s",
+            inviter_userid,
+            invitee_userid,
+            room_id,
+        )
+
         login_response = await self.loginClientUser()
         hasInvitebility = await self.fakeHasInvitabilityOf(
             inviter_userid, invitee_userid, room_id, login_response["access_token"]
         )
 
-        self.logger.info("InviteGuard response - %s", hasInvitebility)
+        self.logger.info("[VerjiInviteGuard] Invitability result: %s", hasInvitebility)
 
         if hasInvitebility and hasInvitebility.get("roomHadParentLink") is True:
             self.logger.info(
@@ -59,11 +65,28 @@ class InviteGuard:
             )
             return False
 
-    @cached()
+    @cached(uncached_args=["access_token", "room_id"])
     async def fakeHasInvitabilityOf(
         self, inviter_userid, invitee_userid, room_id, access_token
     ):
-        """Checks invitability, result is cached automatically by Synapse."""
+        """WIP: Placeholder for invitability check, result is cached automatically by Synapse.
+
+        Cache key is (inviter_userid, invitee_userid) only - the relationship between users.
+        room_id and access_token are excluded from cache key but still used for API calls.
+
+        Rationale: If an inviter has invitability for an invitee, it's valid across all rooms.
+        You don't invite the same person to the same room twice, but you may invite them to
+        multiple different rooms.
+
+        In future, when invitability logic is implemented, we may cache different values,
+        Most likely: inviter, invitee and spaceId - but for demo purposes we keep it simple, 
+        and instead cache if a inviter and invitee - and draw conclusions on this alone.
+        """
+
+        # This log only appears when the cached function is actually executed (cache miss)
+        self.logger.info(
+            "[VerjiInviteGuard] CACHE MISS - Fetching invitability from backend API"
+        )
 
         url = f"https://itopsmx.verji.local/api/v1.1/rooms/{room_id}/parent-space"
 
@@ -77,9 +100,14 @@ class InviteGuard:
         }
 
         self.logger.info(
-            "[VerjiInviteGuard] Calling %s with headers %s and args %s",
+            "[VerjiInviteGuard] Checking invitability: inviter=%s, invitee=%s, room=%s",
+            inviter_userid,
+            invitee_userid,
+            room_id,
+        )
+        self.logger.debug(
+            "[VerjiInviteGuard] Request details - URL: %s, args: %s",
             url,
-            headers,
             args,
         )
 
@@ -93,6 +121,7 @@ class InviteGuard:
         return response
 
     async def loginClientUser(self):
+        """Fetches and caches OAuth token. Token is reused until 10s before expiry."""
         now = time.time()
         if self._cached_token and now < self._token_expiry:
             self.logger.debug("Reusing cached access token")
